@@ -1,1 +1,1 @@
-#Este modulo se encarga de realizar el programa
+#Este modulo se encarga de realizar el programa pasando la gramatica a CNF y luego aplicando CYK

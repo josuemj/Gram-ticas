@@ -1,1 +1,4 @@
-#En este modulo se utiliza el algoritmo CFG a CNF con implementacion del algorimo CYK para la generacion de oraciones
+#En este modulo se utiliza el algoritmo CFG a CNF, debe retornar la gramática en CNF formato json, ingresando la gramática en formato json.
+
+def CFG_to_CNF(grammar):
+    return 
