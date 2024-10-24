@@ -91,23 +91,3 @@ class CFG:
         
         # If no derivation was successful, return False
         return False
-
-# Example usage:
-terminals = {'a', 'b', 'c'}
-non_terminals = {'S', 'A', 'B'}
-start_symbol = 'S'
-
-# Create a CFG
-cfg = CFG(terminals, non_terminals, start_symbol)
-
-# Add production rules
-cfg.add_rule('S', ['A', 'B'])
-cfg.add_rule('A', ['a'])
-cfg.add_rule('B', ['b', 'c'])
-
-# Display the grammar
-cfg.display()
-
-# Parse a string
-string = 'a b c'
-print(f"\nParsing '{string}':", cfg.parse(string))  # Output: True
