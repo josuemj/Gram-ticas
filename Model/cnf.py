@@ -8,7 +8,6 @@ class CNF(CFG):
     def to_cnf(self):
         """
         Convert the CFG to Chomsky Normal Form (CNF).
-        :return: A new CNF instance with the transformed rules.
         """
         # Step 1: Remove epsilon-productions
         self._remove_epsilon_productions()
@@ -21,9 +20,6 @@ class CNF(CFG):
 
         # Step 4: Ensure all terminal rules are in the correct form
         self._ensure_terminal_rules()
-
-        # Return a new CNF object with the updated rules
-        return self
 
     def _remove_epsilon_productions(self):
         """
@@ -38,18 +34,17 @@ class CNF(CFG):
                     nullable.add(nt)
 
         # Remove epsilon-productions and add new productions for nullable symbols
-        while True:
-            new_nullable = nullable.copy()
+        while nullable:
+            nullable = set()
             for nt, productions in deepcopy(self.rules).items():
                 for prod in productions:
+                    if all(symbol in nullable for symbol in prod):
+                        self.rules[nt].append(['epsilon'])
                     if any(symbol in nullable for symbol in prod):
-                        # Add new production by removing nullable symbols
                         new_prod = [s for s in prod if s not in nullable]
-                        if new_prod:
-                            self.add_rule(nt, new_prod)
-
-            if new_nullable == nullable:
-                break
+                        if new_prod and new_prod not in self.rules[nt]:
+                            self.rules[nt].append(new_prod)
+                        nullable.update([nt for nt in self.rules if ['epsilon'] in self.rules[nt]])
 
         # Remove original epsilon-productions
         for nt in self.rules:
@@ -69,7 +64,9 @@ class CNF(CFG):
 
             for nt, target in unit_productions:
                 self.rules[nt].remove([target])
-                self.rules[nt].extend([prod for prod in self.rules[target]])
+                self.rules[nt].extend(
+                    [prod for prod in self.rules[target] if prod != [target]]
+                )
 
     def _convert_to_binary(self):
         """
@@ -83,17 +80,11 @@ class CNF(CFG):
             for prod in productions:
                 # If production has more than 2 symbols, convert to binary
                 while len(prod) > 2:
-                    # Create a new non-terminal
                     new_nt = f"X{counter}"
                     counter += 1
                     self.non_terminals.add(new_nt)
-
-                    # Add the new rule
                     new_rules[new_nt] = [[prod[0], prod[1]]]
-
-                    # Update the production
                     prod = [new_nt] + prod[2:]
-
                 new_rules[nt].append(prod)
 
         self.rules = new_rules
@@ -102,27 +93,61 @@ class CNF(CFG):
         """
         Ensure that all terminal rules are of the form A -> a.
         """
-        new_rules = {}
         terminal_map = {}
 
         for nt, productions in deepcopy(self.rules).items():
-            new_rules[nt] = []
+            new_prods = []
             for prod in productions:
                 if len(prod) == 2:
-                    # If a production has a terminal and a non-terminal, separate the terminal
                     new_prod = []
                     for symbol in prod:
                         if symbol in self.terminals:
                             if symbol not in terminal_map:
                                 new_nt = f"T_{symbol}"
-                                self.non_terminals.add(new_nt)
                                 terminal_map[symbol] = new_nt
-                                new_rules[new_nt] = [[symbol]]
+                                self.non_terminals.add(new_nt)
+                                self.rules[new_nt] = [[symbol]]
                             new_prod.append(terminal_map[symbol])
                         else:
                             new_prod.append(symbol)
-                    new_rules[nt].append(new_prod)
+                    new_prods.append(new_prod)
                 else:
-                    new_rules[nt].append(prod)
+                    new_prods.append(prod)
+            self.rules[nt] = new_prods
+    
+    def cyk_parse(self, sentence):
+        """
+        Parse a sentence using the CYK algorithm.
+        :param sentence: The input sentence as a string.
+        :return: True if the sentence can be derived from the grammar, False otherwise.
+        """
+        words = sentence.strip().split()
+        n = len(words)
+        if n == 0:
+            return False  # Empty string not accepted unless the grammar can derive epsilon
 
-        self.rules = new_rules
+        # Initialize the table
+        T = [[set() for _ in range(n)] for _ in range(n)]
+
+        # Fill in the diagonal of the table with productions that generate terminals
+        for i in range(n):
+            word = words[i]
+            for nt in self.rules:
+                for prod in self.rules[nt]:
+                    if len(prod) == 1 and prod[0] == word:
+                        T[i][i].add(nt)
+
+        # Fill the table for substrings of length 2 to n
+        for length in range(2, n + 1):  # Length of the span
+            for i in range(n - length + 1):  # Start of the span
+                j = i + length - 1  # End of the span
+                for k in range(i, j):  # Split position
+                    for B in T[i][k]:
+                        for C in T[k + 1][j]:
+                            for nt in self.rules:
+                                for prod in self.rules[nt]:
+                                    if len(prod) == 2 and prod[0] == B and prod[1] == C:
+                                        T[i][j].add(nt)
+
+        # Check if the start symbol is in the top-right cell of the table
+        return self.start_symbol in T[0][n - 1]
