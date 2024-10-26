@@ -64,16 +64,23 @@ print("\nGrammar in Chomsky Normal Form:")
 cnf.display()
 
 # Implement the CYK algorithm and parse sentences
-def test_sentence(sentence):
-    result = cnf.cyk_parse(sentence)
-    print(f"The sentence '{sentence}' is {'accepted' if result else 'rejected'} by the grammar.")
+sentences = [
+    # 'he eats the cake',
+    # 'she drinks a juice',
+    # 'the dog eats a cake with a spoon',
+    # 'he cuts the meat in the oven with a fork',
+    # 'she cooks a soup with the knife',
+    'he eats the cake in the oven with the spoon',
+    'he eats the cake with the cake',  # Syntactically valid but semantically odd
+    'she with eats'  # Should be rejected
+]
 
-# Test sentences
-test_sentence('he eats the cake')
-test_sentence('she drinks a juice')
-test_sentence('the dog eats a cake with a spoon')
-test_sentence('he cuts the meat in the oven with a fork')
-test_sentence('she cooks a soup with the knife')
-test_sentence('he eats the cake in the oven with the spoon')
-test_sentence('he eats the cake with the cake')  # Should be rejected (nonsense)
-test_sentence('she with eats')  # Should be rejected (invalid structure)
+for sentence in sentences:
+    print(f"\nParsing sentence: '{sentence}'")
+    parse_trees = cnf.cyk_parse_with_tree(sentence)
+    if parse_trees:
+        print(f"The sentence '{sentence}' is accepted by the grammar.\n")
+        print("Parse Trees:")
+        cnf.print_parse_trees(parse_trees)
+    else:
+        print(f"The sentence '{sentence}' is rejected by the grammar.")

@@ -115,19 +115,19 @@ class CNF(CFG):
                     new_prods.append(prod)
             self.rules[nt] = new_prods
     
-    def cyk_parse(self, sentence):
+    def cyk_parse_with_tree(self, sentence):
         """
-        Parse a sentence using the CYK algorithm.
+        Parse a sentence using the CYK algorithm and build parse trees.
         :param sentence: The input sentence as a string.
-        :return: True if the sentence can be derived from the grammar, False otherwise.
+        :return: A list of parse trees if the sentence can be derived, empty list otherwise.
         """
         words = sentence.strip().split()
         n = len(words)
         if n == 0:
-            return False  # Empty string not accepted unless the grammar can derive epsilon
+            return []  # Empty string not accepted unless the grammar can derive epsilon
 
         # Initialize the table
-        T = [[set() for _ in range(n)] for _ in range(n)]
+        T = [[{} for _ in range(n)] for _ in range(n)]  # T[i][j] is a dict of non-terminals to list of trees
 
         # Fill in the diagonal of the table with productions that generate terminals
         for i in range(n):
@@ -135,19 +135,58 @@ class CNF(CFG):
             for nt in self.rules:
                 for prod in self.rules[nt]:
                     if len(prod) == 1 and prod[0] == word:
-                        T[i][i].add(nt)
+                        if nt not in T[i][i]:
+                            T[i][i][nt] = []
+                        T[i][i][nt].append((nt, word))
 
         # Fill the table for substrings of length 2 to n
         for length in range(2, n + 1):  # Length of the span
             for i in range(n - length + 1):  # Start of the span
                 j = i + length - 1  # End of the span
+                T[i][j] = {}
                 for k in range(i, j):  # Split position
-                    for B in T[i][k]:
-                        for C in T[k + 1][j]:
+                    left_cells = T[i][k]
+                    right_cells = T[k + 1][j]
+                    for B in left_cells:
+                        for C in right_cells:
                             for nt in self.rules:
                                 for prod in self.rules[nt]:
                                     if len(prod) == 2 and prod[0] == B and prod[1] == C:
-                                        T[i][j].add(nt)
+                                        if nt not in T[i][j]:
+                                            T[i][j][nt] = []
+                                        # For each combination of left and right trees
+                                        for left_tree in left_cells[B]:
+                                            for right_tree in right_cells[C]:
+                                                T[i][j][nt].append((nt, left_tree, right_tree))
 
         # Check if the start symbol is in the top-right cell of the table
-        return self.start_symbol in T[0][n - 1]
+        if self.start_symbol in T[0][n - 1]:
+            # Return the list of parse trees starting from the start symbol
+            return T[0][n - 1][self.start_symbol]
+        else:
+            return []
+
+    def print_parse_trees(self, parse_trees, indent=0):
+        """
+        Recursively print the parse trees in a readable format.
+        :param parse_trees: List of parse trees to print.
+        :param indent: Current indentation level (used for formatting).
+        """
+        for tree in parse_trees:
+            self._print_tree(tree, indent)
+            print()
+
+    def _print_tree(self, tree, indent):
+        """
+        Helper function to recursively print a single parse tree.
+        :param tree: The parse tree to print.
+        :param indent: Current indentation level.
+        """
+        if len(tree) == 2:
+            # Terminal production: (Non-terminal, Terminal)
+            print('  ' * indent + f"{tree[0]} -> '{tree[1]}'")
+        else:
+            # Non-terminal production: (Non-terminal, Left subtree, Right subtree)
+            print('  ' * indent + f"{tree[0]} ->")
+            self._print_tree(tree[1], indent + 1)
+            self._print_tree(tree[2], indent + 1)
