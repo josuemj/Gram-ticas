@@ -65,14 +65,18 @@ cnf.display()
 
 # Implement the CYK algorithm and parse sentences
 sentences = [
-    # 'he eats the cake',
-    # 'she drinks a juice',
-    # 'the dog eats a cake with a spoon',
-    # 'he cuts the meat in the oven with a fork',
-    # 'she cooks a soup with the knife',
+    'he eats the cake',
+    'she drinks a juice',
+    'the dog eats a cake with a spoon',
+    'he cuts the meat in the oven with a fork',
+    'she cooks a soup with the knife',
     'he eats the cake in the oven with the spoon',
     'he eats the cake with the cake',  # Syntactically valid but semantically odd
-    'she with eats'  # Should be rejected
+    'she with eats', 
+    'she eats a cake with a fork', #accepted
+    'the fork eats the dog', #accepted
+    'the cat the dog', #rejected
+    'eats quicky she' #rejected
 ]
 
 for sentence in sentences:

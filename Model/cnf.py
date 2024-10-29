@@ -169,8 +169,6 @@ class CNF(CFG):
     def print_parse_trees(self, parse_trees, indent=0):
         """
         Recursively print the parse trees in a readable format.
-        :param parse_trees: List of parse trees to print.
-        :param indent: Current indentation level (used for formatting).
         """
         for tree in parse_trees:
             self._print_tree(tree, indent)
@@ -179,8 +177,6 @@ class CNF(CFG):
     def _print_tree(self, tree, indent):
         """
         Helper function to recursively print a single parse tree.
-        :param tree: The parse tree to print.
-        :param indent: Current indentation level.
         """
         if len(tree) == 2:
             # Terminal production: (Non-terminal, Terminal)
