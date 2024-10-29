@@ -1,5 +1,7 @@
 from copy import deepcopy
 from .cfg import CFG
+import time
+
 
 class CNF(CFG):
     def __init__(self, terminals, non_terminals, start_symbol):
@@ -115,15 +117,20 @@ class CNF(CFG):
                     new_prods.append(prod)
             self.rules[nt] = new_prods
     
+
     def cyk_parse_with_tree(self, sentence):
         """
         Parse a sentence using the CYK algorithm and build parse trees.
         :param sentence: The input sentence as a string.
         :return: A list of parse trees if the sentence can be derived, empty list otherwise.
         """
+        start_time = time.perf_counter()  # Start the high-resolution timer
+
         words = sentence.strip().split()
         n = len(words)
         if n == 0:
+            elapsed_time = time.perf_counter() - start_time
+            print(f"\033[91mTime taken: {elapsed_time:.6f} seconds\033[0m")
             return []  # Empty string not accepted unless the grammar can derive epsilon
 
         # Initialize the table
@@ -160,11 +167,16 @@ class CNF(CFG):
                                                 T[i][j][nt].append((nt, left_tree, right_tree))
 
         # Check if the start symbol is in the top-right cell of the table
+        elapsed_time = time.perf_counter() - start_time
+
         if self.start_symbol in T[0][n - 1]:
             # Return the list of parse trees starting from the start symbol
+            print(f"\033[92mTime taken: {elapsed_time:.6f} seconds\033[0m")
             return T[0][n - 1][self.start_symbol]
         else:
+            print(f"\033[91mTime taken: {elapsed_time:.6f} seconds\033[0m")
             return []
+
 
     def print_parse_trees(self, parse_trees, indent=0):
         """
